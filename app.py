@@ -38,12 +38,15 @@ def load_and_train_model():
 news_text = st.text_area("News text", height=180, placeholder="Paste news text here...")
 
 if st.button("Predict / Verify News", type="primary"):
-    if not news_text.strip():
-        st.warning("Enter some news text before requesting a prediction.")
+    cleaned_text = news_text.strip()
+    if not cleaned_text:
+        st.warning("Please enter news text before requesting a prediction.")
+    elif len(cleaned_text.split()) < 3:
+        st.warning("Please enter a longer news sentence or headline (at least 3 words).")
     else:
         try:
             model, vectorizer = load_and_train_model()
-            prediction = int(model.predict(vectorizer.transform([news_text]))[0])
+            prediction = int(model.predict(vectorizer.transform([cleaned_text]))[0])
             if prediction == 1:
                 st.error("🚨 Warning: This news appears to be FAKE!")
             else:
