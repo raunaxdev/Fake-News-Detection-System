@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import re
 from pathlib import Path
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
@@ -39,17 +40,25 @@ news_text = st.text_area("News text", height=180, placeholder="Paste news text h
 
 if st.button("Predict / Verify News", type="primary"):
     cleaned_text = news_text.strip()
+    words = re.findall(r'\b[a-zA-Z]{3,}\b', cleaned_text)
+    
     if not cleaned_text:
-        st.warning("Please enter news text before requesting a prediction.")
-    elif len(cleaned_text.split()) < 3:
-        st.warning("Please enter a longer news sentence or headline (at least 3 words).")
+        st.warning("⚠️ Please enter news text before requesting a prediction.")
+    elif len(words) < 3:
+        st.warning("⚠️ Please enter a valid news sentence/headline containing meaningful words.")
     else:
         try:
             model, vectorizer = load_and_train_model()
-            prediction = int(model.predict(vectorizer.transform([cleaned_text]))[0])
-            if prediction == 1:
-                st.error("🚨 Warning: This news appears to be FAKE!")
+            transformed_input = vectorizer.transform([cleaned_text])
+            
+            # Check if input contains any recognized vocabulary features
+            if transformed_input.nnz == 0:
+                st.warning("⚠️ The input text contains unrecognized words. Please provide a clear English news article or headline.")
             else:
-                st.success("✅ Clean: This news appears to be REAL!")
+                prediction = int(model.predict(transformed_input)[0])
+                if prediction == 1:
+                    st.error("🚨 Warning: This news appears to be FAKE!")
+                else:
+                    st.success("✅ Clean: This news appears to be REAL!")
         except Exception as error:
             st.error(f"Error executing prediction: {error}")
